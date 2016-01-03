@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!--
+ Extension options
+ -->
+<html>
+<head>
+	<meta charset='utf-8'>
+	<title>options</title>
+	<link rel="stylesheet" type="text/css" href="popup.css"/>
+	<script src="sha256.js"></script>
+	<script src="shared.js"></script>
+	<script src="options.js"></script>
+</head>
+<body>
+	<div id="WarningMessage">?</div>
+	<div id="Content_Actions" class="hidden">
+		Tip: the <b>Alt+P</b> keyboard shortcut can be used instead of
+		clicking the toolbar icon.
+		<hr/>
+		<p>
+		<button id="btnActChangePIN">Change PIN</button>
+		<p>
+		<button id="btnActViewSeed">View Seed</button>
+		<p>
+		<button id="btnActChangeSeed">Change/Delete Seed</button>
+	</div>
+	<div id="Content_ViewSeed" class="hidden">
+		Your encrypted seed is:
+		<p>
+		<textarea id="txtViewSeed" rows="2" cols="40"></textarea>
+	</div>
+	<div id="Content_ViewSeedAfterPINChange" class="hidden">
+		Your seed has been re-encrypted with your new PIN.
+		Take a moment to <b>store this</b> in a secure location.
+		<p>
+		Also, it is recommended that you destroy all
+		copies of the old encrypted seed
+		and update them with the newly encrypted seed.
+		<p>
+		<textarea id="txtViewNewSeed" rows="2" cols="40"></textarea>
+	</div>	
+	<div id="Content_ChangePIN" class="hidden">
+		This will re-encrypt your seed with a different PIN.
+		This does <b>not</b> cause your web site passwords to change because
+		the underlying random seed will remain the same.  Only the encrypted
+		representation of the seed will change.
+		<br/>
+		<br/>
+		After this it is recommended that you destroy all
+		copies of the old encrypted seed
+		and update them with the newly encrypted seed.
+		<hr/>
+		<form action="unused"> <!-- for ENTER key -->
+			Old PIN: <input type="password" id="old_pin" size="8"/>
+			<br/>
+			<br/>
+			New PIN: <input type="password" id="new_pin" size="8"/>
+			<br/>
+			New Again: <input type="password" id="new_pin2" size="8"/>
+			<br/>
+			<br/>
+			<input type="submit" id="btnSubmitPINChange" class="primary" value="Next..."/>		
+		</form>
+	</div>
+	<div id="Content_ChangePIN_verimg"  class="hidden">
+		Is this the your image? 
+		<b>Do not proceed</b> if it's wrong or else your newly encrypted seed
+		will generate the wrong passwords.
+		<br/>
+		<img id="changePinVerimg" alt="Verify Image"/>
+		<br/>
+		<br/>
+		<button id="btn_verimg_retry">Retry PIN</button>
+		<button id="btn_verimg_next">It's Correct</button>
+	
+	</div>
+	<div id="Content_ChangeSeed"  class="hidden">
+		This action will delete your current seed.  You can then
+		click the Seed Pass toolbar icon to import or create a new seed.
+		<br/>
+		<br/>
+		You should only do this for one of the following reasons:
+		<ol>
+			<li>You wish to create a new seed because you think your old seed has been compromised.  
+			Creating a new seed will cause all websites to have a different password.</li>
+			
+			<li>You want to import a different seed which was created on a different computer or at a past time.</li>
+			
+			<li>You wish to erase the seed from this computer.  Erasing it in this way is usually sufficient. 
+			 If you want to be extra thorough it's a good idea to also delete the Seed Pass extension afterwards.</li>			
+		</ol>
+		<br/>
+		<br/>
+		The following action <b>cannot be undone</b>!  Do not proceed unless you have a backup copy of the current 
+		seed otherwise,
+		any passwords created from the old seed will be <b>lost forever</b>.
+		<br/>
+		<br/>
+		<input id="chkDeleteSeed" type="checkbox"/> <label for="chkDeleteSeed">I understand</label>
+		<br/>
+		<br/>
+		<button id="btnDeleteSeed">Delete Seed</button>				
+	</div>	
+</body>
+</html>
+

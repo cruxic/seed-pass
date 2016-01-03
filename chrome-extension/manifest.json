@@ -1,0 +1,46 @@
+//"Copyright (c) 2016 Adam Bennett.  This program is subject to the Seed Pass LICENSE: https://github.com/cruxic/seed-pass/blob/master/LICENSE",
+{
+	"name": "Seed Pass",
+	"description": "A password manager which does not store anything in \"The Cloud\".  Passwords are implicitly synchronized across all your devices because they are calculated on-the-fly using a cryptographic hash.",
+	"version": "0.9",
+	"author": "Adam Bennett (cruxic at g mail dot com)",
+	"manifest_version": 2,
+
+	"icons": {
+		"48": "icon-48.png",
+		"128": "icon-128.png"
+	},
+
+	"permissions": [
+		"activeTab",
+		"storage"
+	],
+
+	"background": {
+		"persistent": true,
+		"scripts": [
+            "sha256.js",
+            "shared.js",
+            "background.js"
+        ]
+	},
+
+	"browser_action": {
+		"default_title": "Seed Pass\n(Tip: Use Alt+P keyboard shortcut)",
+		"default_popup": "popup.html",
+		"default_icon": "toolbar.png"
+	},
+
+	"commands": {
+		"_execute_browser_action": {
+			"suggested_key": {
+				"default": "Alt+P"
+			}
+		}
+	},
+	
+	"options_ui": {
+		"page": "options.html",
+		"chrome_style": true
+	}
+}
