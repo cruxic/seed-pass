@@ -1,7 +1,6 @@
-//"Copyright (c) 2016 Adam Bennett.  This program is subject to the Seed Pass LICENSE: https://github.com/cruxic/seed-pass/blob/master/LICENSE",
 {
 	"name": "Seed Pass",
-	"description": "A password manager which does not store anything in \"The Cloud\".  Passwords are implicitly synchronized across all your devices because they are calculated on-the-fly using a cryptographic hash.",
+	"description": "Calculates a strong, unique password for every web site.  Passwords are implicitly synchronized without storing them in The Cloud.",
 	"version": "0.9",
 	"author": "Adam Bennett (cruxic at g mail dot com)",
 	"manifest_version": 2,
