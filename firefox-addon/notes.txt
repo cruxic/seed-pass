@@ -1,0 +1,10 @@
+Must set  xpinstall.signatures.required == false in about:config
+
+jpm post --post-url http://localhost:8888/
+
+jpm xpi to create xpi file
+
+To see console.log() messages and errors from the extension:
+
+1) Run firefox from a terminal
+2) in about:config set extensions.sdk.console.logLevel=all  (add a new string value)
