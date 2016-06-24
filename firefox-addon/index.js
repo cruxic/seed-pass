@@ -6,6 +6,7 @@ var action = require("sdk/ui/button/action");
 var child_process = require("sdk/system/child_process");
 var emit = require('sdk/event/core').emit;
 var sha256 = require('sha256');
+const sdk_url = require("sdk/url");
 
 var showHotKey = hotkeys.Hotkey({
 	combo: "alt-p",
@@ -75,7 +76,9 @@ function make_site_hash(sitename, password) {
 }
 
 function exec_usb_communicate(sitehash, callback) {
-	var proc = child_process.spawn('/home/cruxic/seed-pass/firefox-addon/data/usb-communicate');
+	console.log(data.url('usb-communicate'));
+	var filepath = sdk_url.toFilename(data.url('usb-communicate'));	
+	var proc = child_process.spawn('/usr/bin/python', [filepath]);
 
 	var allStdout = '';
 	var allStderr = '';
