@@ -1,0 +1,21 @@
+#!/usr/bin/python
+
+import sys
+import hashlib
+import hmac
+
+dummy_seed = '4dc43d444813fd5035e0169f6d8d1391df3aaef53df1abae27c5b27f46231749'.decode('hex')
+
+def calc_password(sitehash):
+	hm = hmac.new(dummy_seed, sitehash, hashlib.sha256)
+	return hm.hexdigest()
+
+def main():
+	line = sys.stdin.readline().strip()
+	sitehash = line.decode('hex')
+	assert len(sitehash) == 32
+	print '"%s"' % calc_password(sitehash)
+	
+
+if __name__ == '__main__':
+	main()

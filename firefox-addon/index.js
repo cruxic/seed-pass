@@ -4,8 +4,8 @@ var hotkeys = require("sdk/hotkeys");
 var panel = require("sdk/panel");
 var action = require("sdk/ui/button/action");
 var child_process = require("sdk/system/child_process");
-
-
+var emit = require('sdk/event/core').emit;
+var sha256 = require('sha256');
 
 var showHotKey = hotkeys.Hotkey({
 	combo: "alt-p",
@@ -56,25 +56,64 @@ function showResult(obj) {
 		p.port.emit("show", obj);
 	});
 	
-	p.show();	
+	p.show();
 	
-	test_exec();
+	var sitehash = make_site_hash('foo', 'bar');
+	
+	exec_usb_communicate(sitehash, function(hashhex, err) {
+		if (err)
+			console.log('ERROR: ' + err);
+		else
+			console.log('SUCCESS ' + hashhex);
+	});
 }
 
-function test_exec() {
-	var ls = child_process.spawn('/bin/ls', ['-lh', '/usr']);
+function make_site_hash(sitename, password) {
+	var key = sha256.str2words(password);
+	var message = sha256.str2words(sitename);
+	return sha256.words2hex(sha256.hmac(key, message));
+}
 
-	ls.stdout.on('data', function (data) {
-	  console.log('stdout: ' + data);
+function exec_usb_communicate(sitehash, callback) {
+	var proc = child_process.spawn('/home/cruxic/seed-pass/firefox-addon/data/usb-communicate');
+
+	var allStdout = '';
+	var allStderr = '';
+	
+	proc.stdout.on('data', function (data) {
+		//'data' seems to be line buffered but I'll include accumulation logic
+		// in case it's not for some reason
+		if (allStdout.length < 4096)  //prevent excessive output
+			allStdout += data;
 	});
 
-	ls.stderr.on('data', function (data) {
-	  console.log('stderr: ' + data);
+	proc.stderr.on('data', function (data) {
+		if (allStderr.length < 4096)  //prevent excessive output
+			allStderr += data;
 	});
 
-	ls.on('close', function (code) {
-	  console.log('child process exited with code ' + code);
+	proc.on('close', function (code) {
+		if (code == 0) {
+			//correct output is 64 hex characters, double quoted
+			var re = /"([a-fA-F0-9]{64})"/g;
+			var m = re.exec(allStdout);
+			if (m) {
+				//return first capture
+				callback(m[1], null);
+				return;
+			}	
+		}	
+		
+		//something went wrong
+		allStderr += '\n(exit status' + code + ')';			
+		callback(null, allStderr);
+		
 	});	
+	
+	//send sitehash via stdin instead of program arg so that it 
+	// can't be easily snooped in process list.
+	emit(proc.stdin, 'data', sitehash + "\n");
+	emit(proc.stdin, 'end');
 }
 
 

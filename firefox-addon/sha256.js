@@ -31,18 +31,19 @@ The original copyright notice is as follows:
  */
 
 
-var SHA2 = {};
+var sha256 = {};
+module.exports = sha256;  //export as CommonJS module so firefox addon can load it
 
 /**This is raw input type to the core hash function.
 It holds an array of 32bit integers and the total number of bytes
 @param nbytes if omitted this will be words.length * 4
 */
-SHA2.InputWords = function(words, nbytes) {
+sha256.InputWords = function(words, nbytes) {
 	this.words = words.concat([]);  //bugfix: deep copy to prevent side effects
 	this.nbytes = nbytes || (words.length * 4);
 };
 
-SHA2.InputWords.prototype.toBase64 = function() {
+sha256.InputWords.prototype.toBase64 = function() {
 	var i;
 	var output = '';
 	var temp, length;
@@ -105,18 +106,18 @@ SHA2.InputWords.prototype.toBase64 = function() {
 	return output;
 };
 
-SHA2.S = function(X, n) { return (X >>> n) | (X << (32 - n)); };
-SHA2.R = function(X, n) { return X >>> n; };
-SHA2.Ch = function(x, y, z) { return (x & y) ^ ((~x) & z); };
-SHA2.Maj = function(x, y, z) { return (x & y) ^ (x & z) ^ (y & z); };
-SHA2.Sigma0 = function(x) { return this.S(x, 2) ^ this.S(x, 13) ^ this.S(x, 22); };
-SHA2.Sigma1 = function(x) { return this.S(x, 6) ^ this.S(x, 11) ^ this.S(x, 25); };
-SHA2.Gamma0 = function(x) { return this.S(x, 7) ^ this.S(x, 18) ^ this.R(x, 3); };
-SHA2.Gamma1 = function(x) { return this.S(x, 17) ^ this.S(x, 19) ^ this.R(x, 10); };
-SHA2.K = [0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5, 0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174, 0xE49B69C1, 0xEFBE4786, 0xFC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA, 0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x6CA6351, 0x14292967, 0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85, 0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070, 0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3, 0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2];
+sha256.S = function(X, n) { return (X >>> n) | (X << (32 - n)); };
+sha256.R = function(X, n) { return X >>> n; };
+sha256.Ch = function(x, y, z) { return (x & y) ^ ((~x) & z); };
+sha256.Maj = function(x, y, z) { return (x & y) ^ (x & z) ^ (y & z); };
+sha256.Sigma0 = function(x) { return this.S(x, 2) ^ this.S(x, 13) ^ this.S(x, 22); };
+sha256.Sigma1 = function(x) { return this.S(x, 6) ^ this.S(x, 11) ^ this.S(x, 25); };
+sha256.Gamma0 = function(x) { return this.S(x, 7) ^ this.S(x, 18) ^ this.R(x, 3); };
+sha256.Gamma1 = function(x) { return this.S(x, 17) ^ this.S(x, 19) ^ this.R(x, 10); };
+sha256.K = [0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5, 0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5, 0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3, 0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174, 0xE49B69C1, 0xEFBE4786, 0xFC19DC6, 0x240CA1CC, 0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA, 0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7, 0xC6E00BF3, 0xD5A79147, 0x6CA6351, 0x14292967, 0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13, 0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85, 0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3, 0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070, 0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5, 0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3, 0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208, 0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2];
 
 /**This is the raw, core function.  It operates on InputWords and returns an array of words*/
-SHA2.sha256 = function(inputWords) {
+sha256.sha256 = function(inputWords) {
 	var HASH = [0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19];
 	var W = new Array(64);
 	var a, b, c, d, e, f, g, h, i, j, jt;
@@ -180,16 +181,16 @@ SHA2.sha256 = function(inputWords) {
 	return HASH;
 };
 
-SHA2.str2words = function(str) {
+sha256.str2words = function(str) {
 	var bin = [];
 	var chrsz = 8;
 	var mask = (1 << chrsz) - 1;
 	for (var i = 0; i < str.length * chrsz; i += chrsz)
 		bin[i>>5] |= (str.charCodeAt(i / chrsz) & mask) << (24 - i%32);
-	return new SHA2.InputWords(bin, str.length);
+	return new sha256.InputWords(bin, str.length);
 };
 
-SHA2.words2hex = function(binarray) {
+sha256.words2hex = function(binarray) {
 	var hex_tab = "0123456789abcdef";
 	var str = "";
 	for(var i = 0; i < binarray.length * 4; i++) {
@@ -201,11 +202,11 @@ SHA2.words2hex = function(binarray) {
 
 
 /*Hash a text string using SHA256 and return 64 character hex string*/
-SHA2.hash_text_to_hex = function(s) {
+sha256.hash_text_to_hex = function(s) {
 	return this.words2hex(this.sha256(this.str2words(s)));
 };
 
-SHA2.base64_to_words = function(b64) {
+sha256.base64_to_words = function(b64) {
 
 	function decode(elt) {
 		//ASCII codes:
@@ -290,11 +291,11 @@ SHA2.base64_to_words = function(b64) {
 }
 
 /*
-Calculate the HMAC-sha256 of a key and some data (raw strings).
+Calculate the HMAC-sha256 of a key and some data.
 adamb: this HMAC code is adapted from http://pajhome.org.uk/crypt/md5 (BSD License)
 key and data must be InputWords
 */
-SHA2.hmac = function(key, message) {
+sha256.hmac = function(key, message) {
 	var BLOCKSIZE_BYTES = 64;
 	var BLOCKSIZE_WORDS = 16;
 	var bkey, i;
@@ -324,7 +325,7 @@ SHA2.hmac = function(key, message) {
 		opad[i] = 0x5C5C5C5C;
 	}
 
-	var inwords = new SHA2.InputWords(ipad.concat(message.words),
+	var inwords = new sha256.InputWords(ipad.concat(message.words),
 		BLOCKSIZE_BYTES + message.nbytes);
 	var hash = this.sha256(inwords);
 	inwords.words = opad.concat(hash);
