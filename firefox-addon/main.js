@@ -91,8 +91,7 @@ function showPanel(basename, onShowData) {
 
 function onExecFinished(hashhex, err) {
 	if (err) {
-		console.log(err);
-
+		showPanel('error', 'execUSBCommProgram failed.\n' + err);
 	}
 	else {
 		gContentPort.emit("injectPassword", hashhex.substring(0, 8));

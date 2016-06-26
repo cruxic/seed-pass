@@ -12,6 +12,7 @@ def calc_password(sitehash):
 	return hm.hexdigest()
 
 def main():
+	boom()
 	line = sys.stdin.readline().strip()
 	sitehash = line.decode('hex')
 	assert len(sitehash) == 32
