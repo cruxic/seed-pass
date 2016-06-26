@@ -4,11 +4,8 @@ var gSelectedField = null;
 //the most recent password that was last successfully inserted
 var gLastInsertedPassword = '';
 
-function getFocusedPasswordInput() {
+function getFocusedTextInput() {
 	var elm = document.activeElement;
-	console.log(elm);
-	console.log(elm.nodeName);
-	console.log(elm.getAttribute('type'));
 	var types = ['text', 'password'];
 	if (elm && elm.nodeName.toLowerCase() === 'input' &&
 		types.indexOf(elm.getAttribute('type')) != -1)
@@ -33,12 +30,29 @@ function getFocusedPasswordInput() {
 }*/
 
 self.port.on("findFocusedField", function() {
-	console.log("here in findFocusedField");
-	gSelectedField = getFocusedPasswordInput();
-	
+	gSelectedField = getFocusedTextInput();
+
 	self.port.emit("findFocusedField_result", {
-		hasFocusedPasswordInput: gSelectedField !== null,
+		hasFocusedInput: gSelectedField !== null,
+		scheme: document.location.protocol,
 		hostname: document.location.hostname,
-		repeat: gLastInsertedPassword ? true : false
+		isRepeat: gLastInsertedPassword ? true : false
 	});
+});
+
+self.port.on("injectPassword", function(password) {
+	if (gSelectedField) {
+		gSelectedField.value = password;
+		gLastInsertedPassword = password;
+	}
+	else
+		console.log("injectPassword: no selected field!");
+});
+
+self.port.on("repeatPassword", function(password) {
+	if (gSelectedField && gLastInsertedPassword) {
+		gSelectedField.value = gLastInsertedPassword;
+	}
+	else
+		console.log("repeatPassword: nothing to repeat!");
 });

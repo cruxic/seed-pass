@@ -3,6 +3,7 @@
 import sys
 import hashlib
 import hmac
+import time
 
 dummy_seed = '4dc43d444813fd5035e0169f6d8d1391df3aaef53df1abae27c5b27f46231749'.decode('hex')
 
@@ -14,8 +15,12 @@ def main():
 	line = sys.stdin.readline().strip()
 	sitehash = line.decode('hex')
 	assert len(sitehash) == 32
+
+	#simulate delay while user touches device
+	time.sleep(3)
+
 	print '"%s"' % calc_password(sitehash)
-	
+
 
 if __name__ == '__main__':
 	main()

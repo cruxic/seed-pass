@@ -1,10 +1,20 @@
-Must set  xpinstall.signatures.required == false in about:config
+--- jpm installation ---
+sudo apt-get install nodejs-legacy npm
+sudo npm install -g jpm
 
-jpm post --post-url http://localhost:8888/
+--- Firefox Setup ---
 
-jpm xpi to create xpi file
+1) Install this addon
+ https://addons.mozilla.org/en-US/firefox/addon/autoinstaller/
 
-To see console.log() messages and errors from the extension:
+2) In about:config set
+ xpinstall.signatures.required = false
 
-1) Run firefox from a terminal
-2) in about:config set extensions.sdk.console.logLevel=all  (add a new string value)
+3) In about:config add a new string value:
+  extensions.sdk.console.logLevel=all
+
+4) Create the initial xpi and then drag it to firefox
+  jpm xpi
+
+5) From here onward you can do
+  jpm post --post-url http://localhost:8888/

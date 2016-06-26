@@ -3,13 +3,13 @@
   "name": "seed-pass",
   "version": "0.0.1",
   "description": "Calculates a strong, unique password for every web site.  Passwords are implicitly synchronized without storing them in The Cloud.",
-  "main": "index.js",
+  "main": "main.js",
   "author": "Adam Bennett (cruxic at g mail dot com)",
   "engines": {
     "firefox": ">=38.0a1",
     "fennec": ">=38.0a1"
   },
   "license": "GPLv3",
-  
-  "unpack": true
+
+  "unpack": true, "#":"unpack is necessary because it contains an executable program"
 }
