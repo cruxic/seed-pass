@@ -52,8 +52,17 @@ function onPluginClicked() {
 	isRepeat: false,  //true if we have already inserted one password into the page
 }
 */
-function on_findFocusedField_result(info) {
 
+function on_findFocusedField_result(info) {
+	if (info.hasFocusedInput) {
+		beginTouchPromt(info);
+	}
+	else {
+		showPanel('no_field_selected', info, function(){beginTouchPromt(info)});			
+	}
+}
+
+function beginTouchPromt(info) {
 	//TODO: warn if scheme is not 'https:'
 
 	var sitename = makeSitename(info.hostname);
@@ -66,28 +75,31 @@ function on_findFocusedField_result(info) {
 	//Execute native program to communicate with USB device
 	execUSBCommProgram(sitehash, onExecFinished);
 
-	showPanel('touch-prompt', sitename);
+	showPanel('touch_prompt', sitename);	
 }
 
-function showPanel(basename, onShowData) {
+
+
+function showPanel(basename, onloadArg, callback) {
 	var pnl = panel.Panel({
 		width: 640,
 		height: 480,
 		position: actionButton,
 		contentURL: data.url(basename + ".html"),
-		contentScriptFile: data.url(basename + ".js")
+		contentScriptFile: data.url("panel-script.js")
 	});
 
-	if (typeof(onShowData) != 'undefined') {
-		pnl.on("show", function() {
-			pnl.port.emit("show", onShowData);
-		});
-	}
+	pnl.on("show", function() {
+		if (typeof(callback) == 'function')
+			pnl.port.on('callback', callback);		
+		pnl.port.emit("onload", {panelName: basename, arg: onloadArg});
+	});
 
 	pnl.show();
 
 	gActivePanel = pnl;
 }
+
 
 function onExecFinished(hashhex, err) {
 	if (err) {
