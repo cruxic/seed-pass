@@ -1,0 +1,5 @@
+export GOPATH=`pwd`
+go get github.com/boombuler/hid
+
+sudo apt-get install autotools-dev autoconf automake libtool
+
