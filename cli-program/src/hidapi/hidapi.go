@@ -157,7 +157,7 @@ func (self *HID_Device) Get_serial_number_string() (string, error) {
 }
 
 func (self *HID_Device) Read_timeout(numBytes, timeoutMillis int) ([]byte, error) {
-//int HID_API_EXPORT HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds);
+	//int HID_API_EXPORT HID_API_CALL hid_read_timeout(hid_device *dev, unsigned char *data, size_t length, int milliseconds);
 	data := make([]byte, numBytes)
 	res := C.hid_read_timeout(self.cptr, (*C.uchar)(unsafe.Pointer(&data[0])), C.size_t(numBytes), C.int(timeoutMillis))
 	if res == 0 {
@@ -169,6 +169,17 @@ func (self *HID_Device) Read_timeout(numBytes, timeoutMillis int) ([]byte, error
 		return nil, self.last_error()		
 	}
 }
+
+func (self *HID_Device) Write(report []byte) error {
+	//int  HID_API_EXPORT HID_API_CALL hid_write(hid_device *device, const unsigned char *data, size_t length);
+	res := C.hid_write(self.cptr, (*C.uchar)(unsafe.Pointer(&report[0])), C.size_t(len(report)))
+	if int(res) == len(report) {
+		return nil
+	} else {
+		return self.last_error()
+	}
+}
+
 
 
 
