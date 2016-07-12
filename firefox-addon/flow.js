@@ -1,45 +1,31 @@
 //This file defines the high-level flow of the plugin.  It is 
-// intended to be browser agnostic and purely declarative.
+// intended to be browser agnostic.
 
-var SEEDPASS_FLOW = {
-	
-	//When the pluging icon is clicked
-	Event_ToolbarClick: {
-		Decide_IsSetup: {
-			
-		
-		}			
-	},
-	//HotKey (Ctrl+P) does the same as Event_ToolbarClick
-	Event_Hotkey = this.Event_ToolbarClick;
-
-
-}
-
-function SEEDPASS_FLOW(state) {
+module.exports = function(state) {
 	if (state.startEvent == 'TOOLBAR_CLICK' || state.startEvent == 'HOTKEY') {
 		return doTOOLBAR_CLICK(state);
 	}
 }
 
 function doTOOLBAR_CLICK(state) {
-	if (state.isSeedSetup()) {
+	if (isSeedSetup(state)) {
 		
 	}
 	else {
-		switch (state.prompt("PleaseImportOrCreate")) {
+		var result = state.prompt("PleaseImportOrCreate");
+		switch (result) {
 			case "IMPORT":
 				break;
 			case "CREATE":
 				doCREATE(state);
 				state.done();
 				break;
-			case "LEARN_MORE":
-				state.openBrowserTab("https://cruxic.github.io/seedpass/LEARN_MORE/");
+			case "OVERVIEW":
+				state.openBrowserTab("https://cruxic.github.io/seedpass/QUICK_OVERVIEW/");
 				state.done();
 				break;
 			default:
-				state.die();
+				state.die(result);
 		}
 		
 	}
@@ -47,12 +33,13 @@ function doTOOLBAR_CLICK(state) {
 
 function doCREATE(state) {
 	//do all this in a full size browser window instead of the popup
-	state.switchToBrowserTab("doCREATE");
+	state.switchToPrivateWindow();
 	
-	state.prompt("CreateMustBeDoneOnASecureComputer");
+	state.prompt("AreYouOnASecureComputer");
 		
-	state.prompt("EnterSeedName");
-	var seedName = state.get("EnterSeedName");
+	var formData = state.prompt("EnterSeedName");
+	var seedName = formData['SeedName'];
+	console.log('seed name ' + seedName);
 	
 	state.prompt("CreateSeedPassword");
 	var seedPassword = state.get("CreateSeedPassword");
@@ -62,15 +49,13 @@ function doCREATE(state) {
 	
 	var seed = state.get("createdSeed", function() {
 		return createSeed(scribbleNoise);
-	});
-	
-	
-		
-	
-	
-		
+	});		
 }
 
 function createSeed(scribbleNoise) {
 
+}
+
+function isSeedSetup(state) {
+	return false;	
 }

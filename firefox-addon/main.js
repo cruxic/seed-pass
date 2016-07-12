@@ -1,5 +1,5 @@
 var data = require("sdk/self").data;
-var tabs = require("sdk/tabs");
+const tabs = require("sdk/tabs");
 var hotkeys = require("sdk/hotkeys");
 var panel = require("sdk/panel");
 var action = require("sdk/ui/button/action");
@@ -7,16 +7,19 @@ var child_process = require("sdk/system/child_process");
 var emit = require('sdk/event/core').emit;
 var sha256 = require('sha256');
 const sdk_url = require("sdk/url");
+const gFlowFunc = require('flow');
+
+var gFlowState = null;
 
 //the currently displaying Panel (if any)
-var gActivePanel = null;
+//var gActivePanel = null;
 
 //used to emit() messages to content-script.js
 var gContentPort = null;
 
 var showHotKey = hotkeys.Hotkey({
 	combo: "alt-p",
-	onPress: onPluginClicked
+	onPress: function() {restartFlow('HOTKEY');}
 });
 
 
@@ -29,7 +32,7 @@ var actionButton = action.ActionButton({
 		"32": "./toolbar32.png",
 		"64": "./toolbar64.png"
 	},
-	onClick: onPluginClicked
+	onClick: function() {restartFlow('TOOLBAR_CLICK');}
 });
 
 //Called when the plugin is invoked via hot-key or toolbar button
@@ -80,7 +83,7 @@ function beginTouchPromt(info) {
 
 
 
-function showPanel(basename, onloadArg, callback) {
+function makePanel(basename, onloadArg, callback) {
 	var pnl = panel.Panel({
 		width: 640,
 		height: 480,
@@ -94,10 +97,8 @@ function showPanel(basename, onloadArg, callback) {
 			pnl.port.on('callback', callback);		
 		pnl.port.emit("onload", {panelName: basename, arg: onloadArg});
 	});
-
-	pnl.show();
-
-	gActivePanel = pnl;
+	
+	return pnl;
 }
 
 
@@ -192,3 +193,183 @@ function make_site_hash(sitename, password) {
 	var message = sha256.str2words(sitename);
 	return sha256.words2hex(sha256.hmac(key, message));
 }
+
+function FlowState(startEvent) {
+	this.startEvent = startEvent;
+	this.promptPanel = null;
+	this.promptId = null;
+	this.tab = null;
+	this.tabLoadArg = null;
+	this.tabPort = null;  //Worker.port returned by tab.attach()
+	this.nextPromptInTab = false;
+	
+	
+	//used for get/set
+	this.valueMap = Object.create(null);
+}
+
+function PauseFlowEx(sourceMsg) {
+	this.sourceMsg = sourceMsg;
+}
+
+FlowState.prototype._printVars = function() {
+	var key, value;
+	var msg = '_printVars: startEvent=' + this.startEvent + '\n';
+	for (key in this.valueMap) {
+		if (key.indexOf('VAL_') == 0) {
+			value = this.valueMap[key];
+			msg += '\t' + key.substring(4) + ': ' + value + '\n';
+		}
+	}
+	
+	console.log(msg);
+}
+
+FlowState.prototype.get = function(name, defaultFunc) {
+	var key = "VAL_" + name;
+	var value = this.valueMap[key];
+	
+	//provide default if missing
+	if (typeof(value) == 'undefined' && defaultFunc) {
+		value = defaultFunc(this);
+		this.valueMap[key] = value;
+	}
+	
+	return value;
+};
+
+FlowState.prototype.set = function(name, value) {
+	var key = "VAL_" + name;
+	this.valueMap[key] = value;
+};
+
+
+FlowState.prototype.done = function(arg) {
+	console.log('DONE');
+	if (this.promptPanel)
+		this.promptPanel.hide();
+	throw new PauseFlowEx("done");	
+}
+
+FlowState.prototype.die = function(arg) {
+	throw new Error('die called! arg=' + arg);
+}
+
+FlowState.prototype.panelCallback = function(jsonText) {
+	console.log('panelCallback for ' + this.promptId + '. result=' + jsonText);
+	this.set(this.promptId + "_RESULT", JSON.parse(jsonText));
+	incrementFlow();
+}
+
+FlowState.prototype.prompt = function(promptId, arg) {
+	//Skip if we have the result already
+	var promptResult = this.get(promptId + "_RESULT");
+	if (typeof(promptResult) != 'undefined') {
+		console.log('prompt: ' + promptId + ' has result ' + promptResult);
+		return promptResult;
+	}
+	
+	if (this.nextPromptInTab) {
+		this.nextPromptInTab = false;
+		
+		var url = data.url(promptId + ".html");
+		
+		console.log('prompt: preparing tab');
+		
+		this.promptId = promptId;
+		this.tabLoadArg = arg;
+		
+		tabs.open({
+			url: url,
+			isPrivate: true,
+			inNewWindow: true,
+			onReady: this._tab_onReady.bind(this)
+		});
+		throw new PauseFlowEx("tabs.open");
+	}
+	
+	//Prompt in tab?
+	if (this.tab) {	
+		console.log('prompt: ' + promptId + ' loading in tab. arg=' + arg);
+		this._printVars();
+		
+		
+		this.promptId = promptId;
+		this.tabLoadArg = arg;
+		var url = data.url(promptId + ".html");
+		console.log('changing url to ' + url);
+		this.tab.url = url;
+		throw new PauseFlowEx("tab.url=" + url);
+	}
+	//Prompt in Panel
+	else {
+		console.log('prompt: ' + promptId + ' making new panel. arg=' + arg);
+		this.promptId = promptId;
+		this.promptPanel = makePanel(promptId, arg, this.panelCallback.bind(this));
+		this.promptPanel.show();
+		throw new PauseFlowEx("promptPanel.show");
+	}
+};
+
+FlowState.prototype.openBrowserTab = function(url) {
+	console.log('openBrowserTab ' + url);
+	tabs.open(url);
+};
+
+FlowState.prototype._tab_onReady = function(tab) {
+	this.tab = tab;
+	
+	console.log("inside _tab_onReady " + this.promptId);
+
+	var worker = tab.attach({
+		contentScriptFile: data.url("panel-script.js")
+	});
+	
+	console.log('attach complete');
+	
+	var promptId = this.promptId;
+	var tabLoadArg = this.tabLoadArg;
+	this.tabPort = worker.port;
+	var that = this;
+	
+	worker.port.on("tab_script_ready", function() {
+		console.log("heard tab_script_ready " + promptId);
+		worker.port.on("callback", that.panelCallback.bind(that));
+		worker.port.emit("onload", {panelName: promptId, arg: tabLoadArg});
+	});
+}
+
+FlowState.prototype.switchToPrivateWindow = function() {
+	console.log('insided switchToPrivateWindow');
+	if (this.tab === null) {
+		this.nextPromptInTab = true;
+		if (this.promptPanel)
+			this.promptPanel.hide();
+	}
+};
+
+function restartFlow(startEvent) {
+	console.log('restartFlow ' + startEvent);
+	gFlowState = new FlowState(startEvent);
+	incrementFlow();	
+}
+
+function incrementFlow() {
+	try {
+		console.log('BEGIN incrementFlow');
+		gFlowState._printVars();
+		gFlowFunc(gFlowState);
+		console.log('END incrementFlow');
+	}
+	catch (e) {
+		if (e instanceof PauseFlowEx) {
+			console.log('PauseFlowEx ' + e.sourceMsg);
+			return;
+		}
+		else {
+			console.log('Unexpected exception in incrementFlow');
+			throw e;
+		}
+	}
+}
+
