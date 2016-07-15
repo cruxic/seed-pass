@@ -3,7 +3,7 @@
 */
 
 //Note: require() is provided by require1k.js
-const example = require('example_module');
+const example = require('./example_module');
 
 
 QUnit.test("example", function( assert ) {
