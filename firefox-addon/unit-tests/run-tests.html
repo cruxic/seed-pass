@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Seed-Pass Unit Tests</title>
+  <link rel="stylesheet" href="./qunit-2.0.0.css">
+</head>
+<body>
+  <div id="qunit"></div>
+  <div id="qunit-fixture"></div>
+  
+  <!-- I think this needs to load BEFORE anything in load_tests.js -->
+  <script src="./qunit-2.0.0.js"></script>
+  
+  <!-- Using require1k to support CommonJS modules within the browser -->
+  <!-- See load_tests.js for all the modules actually being tested -->
+  <script src="./require1k.js" data-main="./load_tests"></script>
+</body>
+</html>
