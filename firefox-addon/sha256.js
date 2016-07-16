@@ -32,7 +32,7 @@ The original copyright notice is as follows:
 
 
 var sha256 = {};
-module.exports = sha256;  //export as CommonJS module so firefox addon can load it
+if (module) module.exports = sha256;  //export as CommonJS module so firefox addon can load it
 
 /**This is raw input type to the core hash function.
 It holds an array of 32bit integers and the total number of bytes

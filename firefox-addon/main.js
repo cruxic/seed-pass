@@ -83,25 +83,6 @@ function beginTouchPromt(info) {
 
 
 
-function makePanel(basename, onloadArg, callback) {
-	var pnl = panel.Panel({
-		width: 640,
-		height: 480,
-		position: actionButton,
-		contentURL: data.url(basename + ".html"),
-		contentScriptFile: data.url("panel-script.js")
-	});
-
-	pnl.on("show", function() {
-		if (typeof(callback) == 'function')
-			pnl.port.on('callback', callback);		
-		pnl.port.emit("onload", {panelName: basename, arg: onloadArg});
-	});
-	
-	return pnl;
-}
-
-
 function onExecFinished(hashhex, err) {
 	if (err) {
 		showPanel('error', 'execUSBCommProgram failed.\n' + err);
@@ -198,9 +179,10 @@ function FlowState(startEvent) {
 	this.startEvent = startEvent;
 	this.promptPanel = null;
 	this.promptId = null;
+	this.promptValidateFunc = null;
 	this.tab = null;
 	this.tabLoadArg = null;
-	this.tabPort = null;  //Worker.port returned by tab.attach()
+	this.promptPort = null;  //Worker.port returned by tab.attach()
 	this.nextPromptInTab = false;
 	
 	
@@ -243,6 +225,11 @@ FlowState.prototype.set = function(name, value) {
 	this.valueMap[key] = value;
 };
 
+FlowState.prototype.unset = function(name) {
+	var key = "VAL_" + name;
+	delete this.valueMap[key];
+};
+
 
 FlowState.prototype.done = function(arg) {
 	console.log('DONE');
@@ -255,13 +242,29 @@ FlowState.prototype.die = function(arg) {
 	throw new Error('die called! arg=' + arg);
 }
 
-FlowState.prototype.panelCallback = function(jsonText) {
-	console.log('panelCallback for ' + this.promptId + '. result=' + jsonText);
-	this.set(this.promptId + "_RESULT", JSON.parse(jsonText));
+FlowState.prototype._promptSubmitCallback = function(jsonText) {
+	console.log('_promptSubmitCallback for ' + this.promptId + '. result=' + jsonText);
+	var result = JSON.parse(jsonText);
+	
+	//run validation (if any)
+	if (this.promptValidateFunc) {
+		var errMsg = this.promptValidateFunc(this, result);
+		if (typeof(errMsg) == 'string') {
+			this.promptPort.emit('showError', errMsg);
+			return;		
+		}
+		//else validation passed
+	}
+		
+	this.set(this.promptId + "_RESULT", result);
 	incrementFlow();
 }
 
-FlowState.prototype.prompt = function(promptId, arg) {
+FlowState.prototype.resetPrompt = function(promptId) {
+	this.unset(this.promptId + "_RESULT");
+}
+
+FlowState.prototype.prompt = function(promptId, arg, validateFunc) {
 	//Skip if we have the result already
 	var promptResult = this.get(promptId + "_RESULT");
 	if (typeof(promptResult) != 'undefined') {
@@ -288,6 +291,8 @@ FlowState.prototype.prompt = function(promptId, arg) {
 		throw new PauseFlowEx("tabs.open");
 	}
 	
+	var promptURL = data.url(promptId + ".html");
+	
 	//Prompt in tab?
 	if (this.tab) {	
 		console.log('prompt: ' + promptId + ' loading in tab. arg=' + arg);
@@ -296,16 +301,32 @@ FlowState.prototype.prompt = function(promptId, arg) {
 		
 		this.promptId = promptId;
 		this.tabLoadArg = arg;
-		var url = data.url(promptId + ".html");
-		console.log('changing url to ' + url);
-		this.tab.url = url;
-		throw new PauseFlowEx("tab.url=" + url);
+		this.promptValidateFunc = validateFunc;
+		
+		this.tab.url = promptURL;
+		throw new PauseFlowEx("tab.url=" + promptURL);
 	}
 	//Prompt in Panel
 	else {
 		console.log('prompt: ' + promptId + ' making new panel. arg=' + arg);
 		this.promptId = promptId;
-		this.promptPanel = makePanel(promptId, arg, this.panelCallback.bind(this));
+		this.promptValidateFunc = validateFunc;
+		
+		var pnl = panel.Panel({
+			width: 640,
+			height: 480,
+			position: actionButton,
+			contentURL: promptURL,
+			contentScriptFile: data.url("panel-script.js")
+		});
+
+		pnl.port.on('prompt_submit', this._promptSubmitCallback.bind(this));
+		pnl.on("show", function() {
+			pnl.port.emit("onload", {panelName: promptId, arg: arg});
+		});
+		
+		this.promptPanel = pnl;		
+		
 		this.promptPanel.show();
 		throw new PauseFlowEx("promptPanel.show");
 	}
@@ -325,16 +346,13 @@ FlowState.prototype._tab_onReady = function(tab) {
 		contentScriptFile: data.url("panel-script.js")
 	});
 	
-	console.log('attach complete');
-	
 	var promptId = this.promptId;
 	var tabLoadArg = this.tabLoadArg;
-	this.tabPort = worker.port;
+	this.promptPort = worker.port;
 	var that = this;
 	
 	worker.port.on("tab_script_ready", function() {
-		console.log("heard tab_script_ready " + promptId);
-		worker.port.on("callback", that.panelCallback.bind(that));
+		worker.port.on("prompt_submit", that._promptSubmitCallback.bind(that));
 		worker.port.emit("onload", {panelName: promptId, arg: tabLoadArg});
 	});
 }

@@ -12,6 +12,17 @@ body.maxsize {
 	height:580px;
 }
 
+#error {
+	display: none;
+	color: red;
+	border: 1px solid red;
+}
+
+#scribbleCanv {
+	border: 1px solid black;
+	background-color: #cccccc;
+}
+
 div.backgroundLogo {
 	background-image: url("background.png");
 	background-repeat: no-repeat;
